@@ -5,17 +5,11 @@ default_to_workspace = false
 [tasks.watch-front]
 script = "cargo watch -i frontend -x 'install --path crates/aquascope_front --offline --locked'"
 
-[tasks.watch-front-debug]
-script = "cargo watch -i frontend -x 'install --path crates/aquascope_front --offline --locked --debug'"
-
 [tasks.watch-mdbook]
 script = "cargo watch -w crates/mdbook-aquascope/src -w frontend/packages/embed/dist --no-vcs-ignores -x 'install --path crates/mdbook-aquascope --locked --debug --offline'"
 
-[tasks.watch-server]
-script = "cargo run --features=no-docker"
-
 [tasks.watch.run_task]
-name = ["watch-front", "watch-server", "watch-mdbook"]
+name = ["watch-front", "watch-mdbook"]
 parallel = true
 
 [tasks.init-bindings]

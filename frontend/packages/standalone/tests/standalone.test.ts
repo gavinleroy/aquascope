@@ -1,4 +1,9 @@
-import puppeteer, { type Browser, type Page } from "puppeteer";
+import {
+  type Browser,
+  type BrowserContext,
+  type Page,
+  chromium
+} from "playwright";
 import { type PreviewServer, preview } from "vite";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
@@ -10,6 +15,7 @@ describe("Aquascope Standalone", () => {
   let browser: Browser;
   let page: Page;
   let server: PreviewServer;
+  let context: BrowserContext;
 
   beforeAll(async () => {
     server = await preview({ preview: { port: 8000 } });
@@ -21,20 +27,21 @@ describe("Aquascope Standalone", () => {
     //   defaultViewport: { width: 1700, height: 800 },
     //   slowMo: 250,
     // });
-    browser = await puppeteer.launch({});
+    browser = await chromium.launch({});
+    context = await browser.newContext({
+      userAgent:
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
+    });
     // there seems to be a discrepancy between headless and headed modes.
     // See: https://github.com/puppeteer/puppeteer/issues/665
     //
     // In a headless mode the browser seems to skip rendering visual
     // elements (just a gut feeling). Setting the language and
     // user agent seem to help keep things consistent.
-    page = await browser.newPage();
+    page = await context.newPage();
     await page.setExtraHTTPHeaders({
       "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8"
     });
-    await page.setUserAgent(
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"
-    );
   });
 
   afterAll(async () => {
@@ -46,7 +53,7 @@ describe("Aquascope Standalone", () => {
 
   beforeEach(async () => {
     await page.goto("http://localhost:8000", {
-      waitUntil: "networkidle0"
+      waitUntil: "networkidle"
     });
   });
 
@@ -66,7 +73,7 @@ describe("Aquascope Standalone", () => {
     let crashedElement = await page.$(".aquascope-crash");
     // No crashed elements
     expect(crashedElement).toBeNull();
-  }, 60_000);
+  }, 120_000);
 
   // it("runs the interpreter", async () => {
   //   await page.click("#showInterpret");
