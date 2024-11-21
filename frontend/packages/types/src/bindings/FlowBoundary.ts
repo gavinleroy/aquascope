@@ -2,8 +2,4 @@
 import type { CharRange } from "./CharRange";
 import type { FlowEdgeKind } from "./FlowEdgeKind";
 
-export interface FlowBoundary {
-  is_violation: boolean;
-  flow_context: CharRange;
-  kind: FlowEdgeKind;
-}
+export interface FlowBoundary { is_violation: boolean, flow_context: CharRange, kind: FlowEdgeKind, }

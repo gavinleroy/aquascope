@@ -7,6 +7,7 @@ tmp/
 dist/
 node_modules/
 .direnv/
+.envrc
 bindings/
 
 # Ignore generated credentials from google-github-actions/auth
@@ -22,3 +23,4 @@ sample-book/
 # Rust things
 target/
 debug/
+examples/

@@ -4,9 +4,4 @@ import type { FlowBoundary } from "./FlowBoundary";
 import type { Permissions } from "./Permissions";
 import type { PermissionsData } from "./PermissionsData";
 
-export interface PermissionsBoundary {
-  location: CharPos;
-  expected: Permissions;
-  actual: PermissionsData;
-  expecting_flow?: FlowBoundary;
-}
+export interface PermissionsBoundary { location: CharPos, expected: Permissions, actual: PermissionsData, expecting_flow?: FlowBoundary, }

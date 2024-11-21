@@ -2,7 +2,4 @@
 import type { CharRange } from "./CharRange";
 import type { PermissionsStepTable } from "./PermissionsStepTable";
 
-export interface PermissionsLineDisplay {
-  location: CharRange;
-  state: Array<PermissionsStepTable>;
-}
+export interface PermissionsLineDisplay { location: CharRange, state: Array<PermissionsStepTable>, }

@@ -3,22 +3,4 @@ import type { Abbreviated } from "./Abbreviated";
 import type { MHeapAllocKind } from "./MHeapAllocKind";
 import type { MPath } from "./MPath";
 
-export type MValue =
-  | { type: "Bool"; value: boolean }
-  | { type: "Char"; value: number }
-  | { type: "Uint"; value: bigint }
-  | { type: "Int"; value: bigint }
-  | { type: "Float"; value: number }
-  | { type: "Tuple"; value: Array<MValue> }
-  | { type: "Array"; value: Abbreviated<MValue> }
-  | {
-      type: "Adt";
-      value: {
-        name: string;
-        variant: string | null;
-        fields: Array<[string, MValue]>;
-        alloc_kind: MHeapAllocKind | null;
-      };
-    }
-  | { type: "Pointer"; value: { path: MPath; range: bigint | null } }
-  | { type: "Unallocated"; value: { alloc_id: number | null } };
+export type MValue = { "type": "Bool", "value": boolean } | { "type": "Char", "value": number } | { "type": "Uint", "value": bigint } | { "type": "Int", "value": bigint } | { "type": "Float", "value": number } | { "type": "Tuple", "value": Array<MValue> } | { "type": "Array", "value": Abbreviated<MValue> } | { "type": "Adt", "value": { name: string, variant: string | null, fields: Array<[string, MValue]>, alloc_kind: MHeapAllocKind | null, } } | { "type": "Pointer", "value": { path: MPath, range: bigint | null, } } | { "type": "Unallocated", "value": { alloc_id: number | null, } };

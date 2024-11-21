@@ -2,7 +2,4 @@
 import type { MMemorySegment } from "./MMemorySegment";
 import type { MPathSegment } from "./MPathSegment";
 
-export interface MPath {
-  segment: MMemorySegment;
-  parts: Array<MPathSegment>;
-}
+export interface MPath { segment: MMemorySegment, parts: Array<MPathSegment>, }

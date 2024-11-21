@@ -2,7 +2,4 @@
 import type { MResult } from "./MResult";
 import type { MStep } from "./MStep";
 
-export interface MTrace<L> {
-  steps: Array<MStep<L>>;
-  result: MResult;
-}
+export interface MTrace<L> { steps: Array<MStep<L>>, result: MResult, }

@@ -2,9 +2,4 @@
 import type { CharRange } from "./CharRange";
 import type { MLocal } from "./MLocal";
 
-export interface MFrame<L> {
-  name: string;
-  body_span: CharRange;
-  location: L;
-  locals: Array<MLocal>;
-}
+export interface MFrame<L> { name: string, body_span: CharRange, location: L, locals: Array<MLocal>, }

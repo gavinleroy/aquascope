@@ -2,8 +2,4 @@
 import type { CharPos } from "./CharPos";
 import type { FilenameIndex } from "./FilenameIndex";
 
-export interface CharRange {
-  start: CharPos;
-  end: CharPos;
-  filename: FilenameIndex;
-}
+export interface CharRange { start: CharPos, end: CharPos, filename: FilenameIndex, }

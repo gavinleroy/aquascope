@@ -2,7 +2,4 @@
 import type { MdLinePos } from "./MdLinePos";
 import type { PathMatcher } from "./PathMatcher";
 
-export interface StepperAnnotations {
-  focused_lines: Array<MdLinePos>;
-  focused_paths: Record<MdLinePos, Array<PathMatcher>>;
-}
+export interface StepperAnnotations { focused_lines: Array<MdLinePos>, focused_paths: Record<MdLinePos, Array<PathMatcher>>, }

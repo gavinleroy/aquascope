@@ -2,4 +2,4 @@
 import type { LoanKey } from "./LoanKey";
 import type { MoveKey } from "./MoveKey";
 
-export type Refiner = { Loan: LoanKey } | { Move: MoveKey };
+export type Refiner = { "Loan": LoanKey } | { "Move": MoveKey };

@@ -76,7 +76,7 @@ fn main() {{
     let chapter_path = harness.root().join("src/chapter_1.md");
     fs::write(&chapter_path, mk_contents("0"))?;
 
-    let _book =
+    let mut _book =
       harness.compile::<AquascopePreprocessorWrapper>(serde_json::json!({}))?;
 
     // After running the first compile, a cache should exist

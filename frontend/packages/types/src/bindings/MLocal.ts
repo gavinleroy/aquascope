@@ -2,8 +2,4 @@
 import type { MPathSegment } from "./MPathSegment";
 import type { MValue } from "./MValue";
 
-export interface MLocal {
-  name: string;
-  value: MValue;
-  moved_paths: Array<Array<MPathSegment>>;
-}
+export interface MLocal { name: string, value: MValue, moved_paths: Array<Array<MPathSegment>>, }

@@ -2,7 +2,4 @@
 import type { MHeap } from "./MHeap";
 import type { MStack } from "./MStack";
 
-export interface MStep<L> {
-  stack: MStack<L>;
-  heap: MHeap;
-}
+export interface MStep<L> { stack: MStack<L>, heap: MHeap, }

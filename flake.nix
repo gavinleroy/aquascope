@@ -2,38 +2,26 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    rust-overlay.url = "github:oxalica/rust-overlay";
     depot-js.url = "github:cognitive-engineering-lab/depot";
     wasm-rust = {
       type = "github";
       owner = "gavinleroy";
       repo = "rust";
-      ref = "wasm+nightly-2024-05-20";
+      #ref = "wasm+nightly-2024-05-20";
+      ref = "761bcb0ddab3ad08826bf33bc43fb50ea1652285";
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, rust-overlay, depot-js, wasm-rust }:
-  flake-utils.lib.eachSystem [
-    "x86_64-linux"
-    "aarch64-darwin"
-  ] (system:
+  outputs = { self, nixpkgs, flake-utils, depot-js, wasm-rust }:
+  flake-utils.lib.eachDefaultSystem (system:
   let 
-    overlays = [ (import rust-overlay) ];
     pkgs = import nixpkgs {
-      inherit system overlays;
+      inherit system;
     };
 
     # NOTE: won't it be an amazing day when we can use normal toolchains again?
     toolchain = wasm-rust.packages.${system}.default;
-    # toolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
     depotjs = depot-js.packages.${system}.default;
-
-    rustc-host = if system == "x86_64-linux"
-                  then "x86_64-unknown-linux-gnu"
-                 else
-                   if system == "aarch64-darwin"
-                  then "aarch64-apple-darwin"
-                  else throw "unsupported system ${system}";
 
     ci-check = pkgs.writeScriptBin "ci-check" ''
       cargo insta test
@@ -86,17 +74,15 @@
 
         mdbook
 
-        rustup
         toolchain
       ] ++ lib.optionals stdenv.isDarwin [
         darwin.apple_sdk.frameworks.SystemConfiguration
       ];    
 
-      # HACK: whoooooof, this is bad.
       shellHook = ''
-        rustup toolchain link wasm-nightly-2024-05-20 "${toolchain}/${rustc-host}/stage1"
-        export DYLD_LIBRARY_PATH="$DYLD_LIBRARY_PATH:${toolchain}/${rustc-host}/stage1/lib"
-        export PATH="$PATH:${toolchain}/${rustc-host}/stage0/lib/rustlib/${rustc-host}/bin"
+        export SYSROOT=$(rustc --print sysroot)
+        export MIRI_SYSROOT=$(rustc --print sysroot)
+        export DYLD_LIBRARY_PATH="$DYLD_LIBRARY_PATH:$(rustc --print target-libdir)"
       '';
 
       RUSTC_LINKER = "${pkgs.llvmPackages.clangUseLLVM}/bin/clang";

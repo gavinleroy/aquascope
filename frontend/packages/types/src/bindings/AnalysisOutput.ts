@@ -7,12 +7,4 @@ import type { MoveRegions } from "./MoveRegions";
 import type { PermissionsBoundary } from "./PermissionsBoundary";
 import type { PermissionsLineDisplay } from "./PermissionsLineDisplay";
 
-export interface AnalysisOutput {
-  body_range: CharRange;
-  boundaries: Array<PermissionsBoundary>;
-  steps: Array<PermissionsLineDisplay>;
-  loan_points: LoanPoints;
-  loan_regions: LoanRegions;
-  move_points: MovePoints;
-  move_regions: MoveRegions;
-}
+export interface AnalysisOutput { body_range: CharRange, boundaries: Array<PermissionsBoundary>, steps: Array<PermissionsLineDisplay>, loan_points: LoanPoints, loan_regions: LoanRegions, move_points: MovePoints, move_regions: MoveRegions, }

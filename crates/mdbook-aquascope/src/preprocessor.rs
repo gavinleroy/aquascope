@@ -39,15 +39,21 @@ impl AquascopePreprocessor {
     };
 
     let miri_sysroot = aquascope_workspace_utils::miri_sysroot()?;
+    let rustc;
 
-    let toolchain = aquascope_workspace_utils::toolchain()?;
-    let output = run_and_get_output(Command::new("rustup").args([
-      "which",
-      "--toolchain",
-      &toolchain,
-      "rustc",
-    ]))?;
-    let rustc = PathBuf::from(output);
+    if let Ok(toolchain) = aquascope_workspace_utils::toolchain() {
+      let output = run_and_get_output(Command::new("rustup").args([
+        "which",
+        "--toolchain",
+        &toolchain,
+        "rustc",
+      ]))?;
+      rustc = PathBuf::from(output);
+    } else {
+      let output = run_and_get_output(Command::new("which")
+        .arg("rustc"))?;
+      rustc = PathBuf::from(output);
+    }
 
     let output = run_and_get_output(
       Command::new(rustc).args(["--print", "target-libdir"]),
@@ -86,6 +92,7 @@ impl AquascopePreprocessor {
       cmd
         .arg("aquascope")
         .env("SYSROOT", &self.miri_sysroot)
+        .env("MIRI_SYSROOT", &self.miri_sysroot)
         .env("DYLD_LIBRARY_PATH", &self.target_libdir)
         .env("LD_LIBRARY_PATH", &self.target_libdir)
         .env("RUST_BACKTRACE", "1")

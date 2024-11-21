@@ -3,15 +3,4 @@ import type { LoanKey } from "./LoanKey";
 import type { MoveKey } from "./MoveKey";
 import type { Permissions } from "./Permissions";
 
-export interface PermissionsData {
-  type_droppable: boolean;
-  type_writeable: boolean;
-  type_copyable: boolean;
-  is_live: boolean;
-  path_uninitialized: boolean;
-  path_moved?: MoveKey;
-  loan_read_refined?: LoanKey;
-  loan_write_refined?: LoanKey;
-  loan_drop_refined?: LoanKey;
-  permissions: Permissions;
-}
+export interface PermissionsData { type_droppable: boolean, type_writeable: boolean, type_copyable: boolean, is_live: boolean, path_uninitialized: boolean, path_moved?: MoveKey, loan_read_refined?: LoanKey, loan_write_refined?: LoanKey, loan_drop_refined?: LoanKey, permissions: Permissions, }

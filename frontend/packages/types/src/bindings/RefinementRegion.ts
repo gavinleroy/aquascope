@@ -2,7 +2,4 @@
 import type { CharRange } from "./CharRange";
 import type { Refiner } from "./Refiner";
 
-export interface RefinementRegion {
-  refiner_point: Refiner;
-  refined_ranges: Array<CharRange>;
-}
+export interface RefinementRegion { refiner_point: Refiner, refined_ranges: Array<CharRange>, }
