@@ -9,6 +9,7 @@
       repo = "rust";
       #ref = "wasm+nightly-2024-05-20";
       ref = "761bcb0ddab3ad08826bf33bc43fb50ea1652285";
+      flake = false;
     };
   };
 
