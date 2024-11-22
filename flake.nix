@@ -30,16 +30,6 @@
       cd frontend && depot test && cd ..
     '';
 
-    ci-build-pages = pkgs.writeScriptBin "ci-update-frontend" ''
-      cargo doc --lib
-      mv ./target/doc ./frontend/packages/aquascope-standalone/dist/doc
-      cd frontend && depot build
-    '';
-
-    ci-build = pkgs.writeScriptBin "ci-build" ''
-      cargo build --release -p mdbook-aquascope -p aquascope_front
-    '';
-
     ci-install = pkgs.writeScriptBin "ci-install" ''
       cargo install --path crates/aquascope_front --debug --locked
       cargo install --path crates/mdbook-aquascope --debug --locked
@@ -50,48 +40,71 @@
       cargo ws publish --from-git --allow-dirty --yes --token "$1"
     '';
 
+    ci-build-standalone = pkgs.writeScriptBin "ci-build-standalone" ''
+      cd frontend
+      depot build
+    '';
+
+    ci-publish-full-pages = pkgs.writeScriptBin "ci-update-frontend" ''
+      cargo doc --lib
+      mv ./target/doc ./frontend/packages/aquascope-standalone/dist/doc
+      cd frontend && depot build
+    '';
+
+    minimalFrontendDeps = [
+      depotjs
+      pkgs.nodejs_22
+      pkgs.nodePackages.pnpm
+      ci-build-standalone
+    ];
+
   in {
-    devShell = with pkgs; mkShell {
-      buildInputs = [
-        ci-check
-        ci-install
-        ci-build
-        ci-build-pages
-        ci-publish-crates
+    devShells = {
+      # Used only for building the frontend with
+      # depot and publishing the standalone site
+      minimal = pkgs.mkShell {
+        buildInputs = minimalFrontendDeps;
+      };
 
-        llvmPackages_latest.llvm
-        llvmPackages_latest.lld
-        libiconv
-        
-        depotjs
-        nodejs_22
-        nodePackages.pnpm
+      fullstack = with pkgs; mkShell {
+        buildInputs = minimalFrontendDeps ++ [
+          ci-check
+          ci-install
+          ci-publish-crates
+          ci-publish-full-pages
 
+          llvmPackages_latest.llvm
+          llvmPackages_latest.lld
+          libiconv
 
-        cargo-insta
-        cargo-make
-        cargo-watch
-        rust-analyzer
+          cargo-insta
+          cargo-make
+          cargo-watch
+          rust-analyzer
 
-        mdbook
+          mdbook
 
-        toolchain
-      ] ++ lib.optionals stdenv.isDarwin [
-        darwin.apple_sdk.frameworks.SystemConfiguration
-      ];    
+          toolchain
+        ] ++ lib.optionals stdenv.isDarwin [
+          darwin.apple_sdk.frameworks.SystemConfiguration
+        ];
 
-      shellHook = ''
-        export SYSROOT=$(rustc --print sysroot)
-        export MIRI_SYSROOT=$(rustc --print sysroot)
-        export DYLD_LIBRARY_PATH="$DYLD_LIBRARY_PATH:$(rustc --print target-libdir)"
-      '';
+        shellHook = ''
+          export SYSROOT=$(rustc --print sysroot)
+          export MIRI_SYSROOT=$(rustc --print sysroot)
+          export DYLD_LIBRARY_PATH="$DYLD_LIBRARY_PATH:$(rustc --print target-libdir)"
+        '';
 
-      RUSTC_LINKER = "${pkgs.llvmPackages.clangUseLLVM}/bin/clang";
+        RUSTC_LINKER = "${llvmPackages.clangUseLLVM}/bin/clang";
 
-      # NOTE: currently playwright-driver uses version 1.40.0, when something inevitably fails,
-      # check that the version of playwright-driver and that of the NPM playwright
-      # `packages/evaluation/package.json` match.
-      PLAYWRIGHT_BROWSERS_PATH="${playwright-driver.browsers}";
+        # NOTE: currently playwright-driver uses version 1.40.0, when something inevitably fails,
+        # check that the version of playwright-driver and that of the NPM playwright
+        # `packages/evaluation/package.json` match.
+        PLAYWRIGHT_BROWSERS_PATH="${playwright-driver.browsers}";
+      };
+
+      default = self.devShells.${system}.fullstack;
     };
+
   });
 }
