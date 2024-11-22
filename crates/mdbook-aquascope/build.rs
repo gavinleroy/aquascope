@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-const SRC_DIR: &str = "../../frontend/packages/aquascope-embed/dist/";
+const SRC_DIR: &str = "../../frontend/packages/embed/dist/";
 const DST_DIR: &str = "./js";
 
 fn main() -> Result<()> {

@@ -7,6 +7,11 @@
   "entryPointStrategy": "packages",
   "entryPoints": [
     "packages/aquascope-editor",
+<<<<<<< HEAD
     "packages/aquascope-react"
+=======
+    "packages/rustc",
+    "packages/types"
+>>>>>>> fced7740b ([WIP] WASM kinda working... (#1))
   ]
 }
