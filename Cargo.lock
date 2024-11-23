@@ -149,18 +149,6 @@ version = "0.3.4"
 dependencies = [
  "anyhow",
  "serde",
- "toml 0.5.11",
-]
-
-[[package]]
-name = "async-trait"
-version = "0.1.73"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc00ceb34980c03614e35a3a4e218276a0a824e911d07651cd0d858a51e8c0f0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.29",
  "toml 0.8.2",
 ]
 
@@ -282,7 +270,6 @@ dependencies = [
  "js-sys",
  "num-traits",
  "wasm-bindgen",
- "windows-targets 0.52.6",
  "windows-targets 0.52.6",
 ]
 
