@@ -6,7 +6,6 @@
   },
   "devDependencies": {
     "@aquascope/editor": "workspace:*",
-    "@aquascope/system": "workspace:*",
     "@codemirror/autocomplete": "^6.3.0",
     "@codemirror/commands": "^6.1.2",
     "@codemirror/language": "^6.3.0",
@@ -23,5 +22,8 @@
     "react-dom": "^18.2.0",
     "sass": "^1.63.6",
     "vite-plugin-cross-origin-isolation": "^0.1.6"
+  },
+  "dependencies": {
+    "@aquascope/system": "workspace:*"
   }
 }

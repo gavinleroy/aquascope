@@ -164,7 +164,7 @@ let PermStack = ({
       content: flowChar,
       names: ["perm", "flow"],
       exp: boundary.expecting_flow !== undefined,
-      act: !boundary.expecting_flow?.is_violation ?? false,
+      act: !(boundary.expecting_flow?.is_violation ?? false),
       showit: () => void null,
       hideit: () => void null
     }

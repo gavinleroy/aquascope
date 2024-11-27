@@ -6,6 +6,7 @@ import { defineConfig } from "vite";
 const manifest = JSON.parse(fs.readFileSync("package.json", "utf-8"));
 export default defineConfig(({ mode }) => ({
   build: {
+    target: "es2022",
     lib: {
       entry: resolve(__dirname, "src/main.tsx"),
       name: "AquascopeEmbed",
@@ -14,6 +15,9 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       external: Object.keys(manifest.dependencies || {})
     }
+  },
+  esbuild: {
+    target: "es2022"
   },
   define: {
     "process.env.NODE_ENV": JSON.stringify(mode)

@@ -1,4 +1,4 @@
-import { Editor, type Result, type types } from "@aquascope/editor";
+import { Editor, type types } from "@aquascope/editor";
 import { useFloating } from "@floating-ui/react-dom";
 import React, { useContext, useLayoutEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
@@ -27,7 +27,6 @@ declare global {
 
 const CodeContext = React.createContext("");
 
-// TODO: this is duplicated with mdbook-quiz. Should factor out into a mdbook-js-utils maybe?
 const useCaptureMdbookShortcuts = (capture: boolean) => {
   useLayoutEffect(() => {
     if (capture) {
@@ -175,49 +174,55 @@ const ExtraInfo = () => (
   </div>
 );
 
-window.initAquascopeBlocks = async (root: HTMLElement) => {
-  const elements: HTMLDivElement[] = Array.from(
-    root.querySelectorAll<HTMLDivElement>(`.${EMBED_NAME}`)
-  );
-  await Promise.all(
-    elements.map(async elem => {
-      elem.classList.remove(EMBED_NAME);
-      elem.classList.add(AQUASCOPE_NAME);
+// NOTE: We need to dynamically import the system to reduce bundle size.
+import("@aquascope/system").then(system => {
+  // TODO: this is duplicated with mdbook-quiz. Should factor out into a mdbook-js-utils maybe?
+  window.initAquascopeBlocks = async (root: HTMLElement) => {
+    const elements: HTMLDivElement[] = Array.from(
+      root.querySelectorAll<HTMLDivElement>(`.${EMBED_NAME}`)
+    );
+    const backend = await system.initializeAquascopeInstance();
+    await Promise.all(
+      elements.map(async elem => {
+        elem.classList.remove(EMBED_NAME);
+        elem.classList.add(AQUASCOPE_NAME);
 
-      const readOnly = elem.dataset.noInteract! === "true";
-      const showBugReporter = elem.dataset.showBugReporter! === true;
+        const maybeParseJson = <T,>(s: string | undefined): T | undefined =>
+          s ? JSON.parse(s) : undefined;
 
-      let computePermBtn: HTMLButtonElement | undefined;
-      if (!readOnly) {
-        // container for the button
-        const btnWrap = document.createElement("div");
-        btnWrap.classList.add("top-right");
+        const readOnly =
+          maybeParseJson<boolean>(elem.dataset.noInteract!) === true;
+        const showBugReporter =
+          maybeParseJson<boolean>(elem.dataset.showBugReporter!) === true;
 
-        // button for computing the receiver permissions
-        computePermBtn = document.createElement("button");
-        computePermBtn.className = "fa fa-refresh cm-button";
+        let computePermBtn: HTMLButtonElement | undefined;
+        if (!readOnly) {
+          // container for the button
+          const btnWrap = document.createElement("div");
+          btnWrap.classList.add("top-right");
 
-        btnWrap.appendChild(computePermBtn);
-        elem.appendChild(btnWrap);
-      }
+          // button for computing the receiver permissions
+          computePermBtn = document.createElement("button");
+          computePermBtn.className = "fa fa-refresh cm-button";
 
-      const maybeParseJson = <T,>(s: string | undefined): T | undefined =>
-        s ? JSON.parse(s) : undefined;
+          btnWrap.appendChild(computePermBtn);
+          elem.appendChild(btnWrap);
+        }
 
-      const initialCode = maybeParseJson<string>(elem.dataset.code);
-      if (!initialCode) throw new Error("Missing data-code attribute");
+        const initialCode = maybeParseJson<string>(elem.dataset.code);
+        if (!initialCode) throw new Error("Missing data-code attribute");
 
-      if (window.telemetry && showBugReporter) {
-        let extraInfo = document.createElement("div");
-        elem.appendChild(extraInfo);
-        ReactDOM.createRoot(extraInfo).render(
-          <CodeContext.Provider value={initialCode}>
-            <ExtraInfo />
-          </CodeContext.Provider>
-        );
-      }
+        if (window.telemetry && showBugReporter) {
+          let extraInfo = document.createElement("div");
+          elem.appendChild(extraInfo);
+          ReactDOM.createRoot(extraInfo).render(
+            <CodeContext.Provider value={initialCode}>
+              <ExtraInfo />
+            </CodeContext.Provider>
+          );
+        }
 
-      const shouldFailHtml = `
+        const shouldFailHtml = `
   <div class="ferris-container">
     <a href="ch00-00-introduction.html#ferris" target="_blank">
       <img
@@ -229,54 +234,55 @@ window.initAquascopeBlocks = async (root: HTMLElement) => {
   </div>
   `;
 
-      const ed = new Editor(
-        elem,
-        setup,
-        undefined,
-        err => {
-          console.error(err);
-        },
-        initialCode,
-        readOnly,
-        shouldFailHtml,
-        ["copy"]
-      );
-
-      const operations = maybeParseJson<string[]>(elem.dataset.operations);
-      if (!operations) throw new Error("Missing data-operations attribute");
-
-      // TODO: how can we specify `op` to be `Command`?? then use that type here VVVVV
-      const responses = maybeParseJson<{
-        [op: string]: types.CommandResult<types.Command>;
-      }>(elem.dataset.responses);
-      const config = maybeParseJson<any>(elem.dataset.config);
-      const annotations = maybeParseJson<types.AquascopeAnnotations>(
-        elem.dataset.annotations
-      );
-
-      if (responses) {
-        operations.forEach(operation => {
-          // TODO get rid of this cast VVVVVVVVVVVVVVVV
-          ed.renderOperation(operation as types.Command, {
-            response: responses![operation],
-            config,
-            annotations
-          });
-        });
-      }
-
-      computePermBtn?.addEventListener("click", _ => {
-        operations!.forEach(operation =>
-          // TODO: -------------------VVVVVVVV
-          ed.renderOperation(operation! as types.Command, {})
+        const ed = new Editor(
+          elem,
+          setup,
+          backend,
+          err => {
+            console.error(err);
+          },
+          initialCode,
+          readOnly,
+          shouldFailHtml,
+          ["copy"]
         );
-      });
-    })
-  );
-};
 
-window.addEventListener(
-  "load",
-  () => initAquascopeBlocks(document.body),
-  false
-);
+        const operations = maybeParseJson<string[]>(elem.dataset.operations);
+        if (!operations) throw new Error("Missing data-operations attribute");
+
+        // TODO: how can we specify `op` to be `Command`?? then use that type here VVVVV
+        const responses = maybeParseJson<{
+          [op: string]: types.CommandResult<types.Command>;
+        }>(elem.dataset.responses);
+        const config = maybeParseJson<any>(elem.dataset.config);
+        const annotations = maybeParseJson<types.AquascopeAnnotations>(
+          elem.dataset.annotations
+        );
+
+        if (responses) {
+          operations.forEach(operation => {
+            // TODO get rid of this cast VVVVVVVVVVVVVVVV
+            ed.renderOperation(operation as types.Command, {
+              response: responses![operation],
+              config,
+              annotations
+            });
+          });
+        }
+
+        computePermBtn?.addEventListener("click", _ => {
+          operations!.forEach(operation =>
+            // TODO: -------------------VVVVVVVV
+            ed.renderOperation(operation! as types.Command, {})
+          );
+        });
+      })
+    );
+  };
+
+  window.addEventListener(
+    "load",
+    () => initAquascopeBlocks(document.body),
+    false
+  );
+});

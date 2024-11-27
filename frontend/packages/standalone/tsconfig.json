@@ -4,6 +4,7 @@
     "src"
   ],
   "compilerOptions": {
+    "module": "es2022",
     "noEmit": true
   }
 }

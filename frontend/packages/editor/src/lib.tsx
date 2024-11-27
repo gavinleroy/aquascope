@@ -1,9 +1,18 @@
-import type { AquascopeBackend } from "@aquascope/system";
+import {
+  type AquascopeBackend,
+  initializeAquascopeInstance
+} from "@aquascope/system";
 import { rust } from "@codemirror/lang-rust";
 import { indentUnit } from "@codemirror/language";
 import { Compartment, EditorState, type Extension } from "@codemirror/state";
 import { EditorView, type ViewUpdate } from "@codemirror/view";
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState
+} from "react";
 import ReactDOM from "react-dom/client";
 
 import { boundariesField } from "./editor-utils/boundaries.js";
@@ -103,6 +112,13 @@ interface CommonConfig {
   boundaries?: any;
 }
 
+type CommandConfig<C extends Command> = 
+  C extends "interpreter" 
+  ? InterpreterConfig 
+  : C extends "permissions" 
+  ? PermissionsConfig 
+  : never;
+
 export class Editor {
   private view: EditorView;
   private interpreterContainer: HTMLDivElement;
@@ -115,7 +131,7 @@ export class Editor {
   constructor(
     dom: HTMLDivElement,
     readonly setup: Extension,
-    readonly backend: AquascopeBackend | undefined,
+    readonly backend: AquascopeBackend,
     readonly reportStdErr: (err: BackendError) => void = err => {
       console.error("An error occurred: ");
       console.error(err);
@@ -144,6 +160,8 @@ export class Editor {
         markerField.field
       ]
     });
+
+    console.debug(`Creating Rust editor with code: ${code}`);
 
     this.editorContainer = document.createElement("div");
     this.view = new EditorView({
@@ -253,7 +271,7 @@ export class Editor {
       annotations
     }: {
       response?: CommandResult<typeof operation>;
-      config?: CommonConfig & object;
+      config?: CommonConfig & CommandConfig<C> & { shouldFail?: boolean };
       annotations?: AquascopeAnnotations;
     } = {}
   ) {
@@ -265,8 +283,6 @@ export class Editor {
     }
 
     if (!response) {
-      if (!this.backend) throw new Error("Cannot generate without backend");
-
       response = await this.backend.call(operation, inEditor, {
         shouldFail: this.shouldFail
       });
@@ -336,30 +352,159 @@ export class Editor {
 export interface EditorComponentProps {
   code: string;
   setup?: Extension;
-  permissions?: any;
-  steps?: any;
+  permissions?: boolean;
+  interpreter?: boolean;
+  shouldFail?: boolean;
+  showSteps?: boolean;
+  showBoundaries?: boolean;
 }
 
-export let EditorComponent = (props: EditorComponentProps) => {
-  let ref = useRef<HTMLDivElement>(null);
+export const AquascopeContext = createContext<AquascopeBackend | null>(null);
+
+export const AquascopeBackendProvider = (props: React.PropsWithChildren) => {
+  const [backend, setBackend] = useState<AquascopeBackend | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    let editor = new Editor(ref.current!, props.setup ?? [], props.code);
-    if (props.steps)
-      editor.renderOperation("interpreter", {
-        response: props.steps,
-        config: {
-          horizontal: "true"
-        }
-      });
-    if (props.permissions)
-      editor.renderOperation("permissions", {
-        response: props.permissions,
-        config: {
-          stepper: "true",
-          boundaries: "true"
-        }
-      });
-    return () => editor.destroy();
+    console.log("Starting initialization...");
+
+    const init = async () => {
+      console.info("Initializing...");
+      setIsLoading(true);
+      try {
+        console.log("Calling initializeAquascopeInstance...");
+        const b = await Promise.race([
+          initializeAquascopeInstance(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Initialization timeout")), 5000)
+          )
+        ]);
+
+        console.log("Backend initialized successfully");
+        setBackend(b as AquascopeBackend);
+      } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        console.error("Backend initialization failed:", errorMessage);
+        setError(errorMessage);
+      } finally {
+        console.log("Setting isLoading to false");
+        setIsLoading(false);
+      }
+    };
+
+    if (isLoading) {
+      init();
+    }
   }, []);
-  return <div ref={ref} />;
+
+  if (isLoading) {
+    return <div>Loading Aquascope backend...</div>;
+  }
+
+  if (error || !backend) {
+    return <div>Failed to initialize Aquascope backend: {error}</div>;
+  }
+
+  return (
+    <AquascopeContext.Provider value={backend}>
+      {props.children}
+    </AquascopeContext.Provider>
+  );
+};
+
+export const EditorComponent = (props: EditorComponentProps) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const backend = useContext(AquascopeContext);
+  const [editor, setEditor] = useState<Editor | null>(null);
+
+  const [passesBorrowChecker, setPassesBorrowChecker] = useState(false);
+  const [showBoundaries, setShowBoundaries] = useState(props.showBoundaries ?? true);
+  const [showSteps, setShowSteps] = useState(props.showSteps ?? true);
+
+
+  const renderPermissions = () => {
+    editor?.renderPermissions({
+      stepper: showSteps,
+      boundaries: showBoundaries,
+    });
+  };
+
+  const renderInterpreter = () => {
+    editor?.renderOperation("interpreter", {
+      shouldFail: !passesBorrowChecker,
+      horizontal: true
+    } as any);
+  };
+
+  useEffect(() => {
+    if (!backend) {
+      console.warn("Aquascope backend not initialized, deferring editor setup");
+      return;
+    }
+
+    console.debug("Backend initialized, setting up editor");
+
+    const editor = new Editor(
+      ref.current!,
+      props.setup ?? [],
+      backend!,
+      (err: BackendError) => {
+        console.error(`An error occurred: ${err}`);
+      },
+      props.code
+    );
+
+    setEditor(editor);
+    if (props.permissions) renderPermissions();
+    if (props.interpreter) renderInterpreter();
+
+    return () => editor.destroy();
+  }, [backend]);
+
+  const buttons = (
+    <div className="buttons">
+      <div>
+        <div className="dropdown">
+          <button className="cm-button">            
+            <i className="fa fa-caret-down"></i>
+          </button>
+          <div className="dropdown-content">
+            <label className="dropdown-container">Must pass borrow checker?
+              <input type="checkbox" id="passesBorrowChecker" checked={passesBorrowChecker} onChange={() => setPassesBorrowChecker(!passesBorrowChecker)}/>
+              <span className="checkmark" />
+            </label>           
+          </div>
+        </div>
+        <button className="cm-button" onClick={renderInterpreter}>Interpret<span className="loader" /></button>
+      </div>
+      <div>
+        <div className="dropdown">
+          <button className="cm-button">
+            <i className="fa fa-caret-down"></i>
+          </button>
+          <div className="dropdown-content">
+            <label className="dropdown-container">Boundaries
+              <input type="checkbox" id="showBoundaries" checked={showBoundaries} onChange={() => setShowBoundaries(!showBoundaries)}/>
+              <span className="checkmark" />
+            </label>
+            <label className="dropdown-container">Steps
+              <input type="checkbox" id="showSteps" checked={showSteps} onChange={() => setShowSteps(!showSteps)}/>
+              <span className="checkmark" />
+            </label>
+          </div>
+        </div>
+        <button className="cm-button" onClick={renderPermissions}>Permissions<span className="loader" /></button>
+      </div>
+    </div>
+  );
+
+  return !backend ? (
+    <div>Waiting for Aquascope backend...</div>
+  ) : (
+    <div className="aquascope-container">
+      <div className="instance" ref={ref} />
+      {buttons}
+    </div>
+  );
 };
